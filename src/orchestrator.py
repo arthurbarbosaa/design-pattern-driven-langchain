@@ -9,6 +9,7 @@ from src.tools import (
 )
 from typing import cast
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 
 from src.llm import get_llm
@@ -38,9 +39,11 @@ class Orchestrator:
 
     def invoke(self, user_prompt: str) -> tuple[str, str]:
         result = self.agent.invoke(
-            {"messages": [
-                {"role": "user", "content": user_prompt}
-            ]}
+            {
+                "messages": [
+                    HumanMessage(content=user_prompt)
+                ]
+            }
         )
         last_message = result["messages"][-1]
         model_name = last_message.response_metadata.get(
