@@ -3,4 +3,5 @@ langchain-core
 langchain-openai
 pydantic
 python-dotenv
-
+fastapi
+uvicorn
