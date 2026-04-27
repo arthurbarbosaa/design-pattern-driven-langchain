@@ -55,8 +55,7 @@ class Order:
     user_prompt = f"Refactor and return the following code to use an appropriate design pattern:\n\n```python\n{code_to_process}\n```"
     final_output, used_model = orchestrator.invoke(user_prompt)
 
-    print("\n--- Runtime Model Used ---")
-    print(f"Model used: {used_model}")
+    print(f"orchestrator={used_model}")
 
     print("\n--- Final Agent Output ---\n")
     print(final_output)

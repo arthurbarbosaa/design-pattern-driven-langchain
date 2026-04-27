@@ -1,12 +1,13 @@
-from langchain_core.tools import tool
 from langchain_core.prompts import PromptTemplate
-from src.llm import get_llm
+from langchain_core.tools import tool
+
+from src.llm import get_llm, get_runtime_model
 from src.schemas import (
     CodeAnalysisResult,
+    EvaluationResult,
     PatternDetectionResult,
     PatternRecommendationResult,
     RefactoredCodeResult,
-    EvaluationResult
 )
 
 
@@ -27,7 +28,8 @@ def code_analysis_tool(code: str) -> dict:
     This is usually the FIRST step in any reasoning process.
     """
     llm = get_llm()
-    structured_llm = llm.with_structured_output(CodeAnalysisResult)
+    structured_llm = llm.with_structured_output(
+        CodeAnalysisResult, include_raw=True)
 
     prompt = PromptTemplate(
         input_variables=["code"],
@@ -47,12 +49,21 @@ Guidelines:
 
 Code:
 {code}
-"""
+""",
     )
 
     chain = prompt | structured_llm
-    result: CodeAnalysisResult = chain.invoke({"code": code})
-    return result.model_dump()
+    result = chain.invoke({"code": code})
+
+    parsed_result = result.get("parsed")
+    runtime_model = get_runtime_model(result)
+    print(f"tool=code_analysis_tool model={runtime_model}")
+
+    if parsed_result is None:
+        raise ValueError(
+            "Tool code_analysis_tool did not produce parsed output")
+
+    return parsed_result.model_dump()
 
 
 # ========================
@@ -67,7 +78,8 @@ def pattern_detection_tool(analysis: dict) -> dict:
     - missing patterns that could solve detected problems
     """
     llm = get_llm()
-    structured_llm = llm.with_structured_output(PatternDetectionResult)
+    structured_llm = llm.with_structured_output(
+        PatternDetectionResult, include_raw=True)
 
     prompt = PromptTemplate(
         input_variables=["analysis"],
@@ -86,12 +98,21 @@ Guidelines:
 
 Analysis:
 {analysis}
-"""
+""",
     )
 
     chain = prompt | structured_llm
-    result: PatternDetectionResult = chain.invoke({"analysis": analysis})
-    return result.model_dump()
+    result = chain.invoke({"analysis": analysis})
+
+    parsed_result = result.get("parsed")
+    runtime_model = get_runtime_model(result)
+    print(f"tool=pattern_detection_tool model={runtime_model}")
+
+    if parsed_result is None:
+        raise ValueError(
+            "Tool pattern_detection_tool did not produce parsed output")
+
+    return parsed_result.model_dump()
 
 
 # ========================
@@ -109,7 +130,10 @@ def pattern_recommendation_tool(detection_result: dict) -> dict:
     - list alternatives
     """
     llm = get_llm()
-    structured_llm = llm.with_structured_output(PatternRecommendationResult)
+    structured_llm = llm.with_structured_output(
+        PatternRecommendationResult,
+        include_raw=True,
+    )
 
     prompt = PromptTemplate(
         input_variables=["detection_result"],
@@ -128,14 +152,21 @@ Guidelines:
 
 Detection Result:
 {detection_result}
-"""
+""",
     )
 
     chain = prompt | structured_llm
-    result: PatternRecommendationResult = chain.invoke(
-        {"detection_result": detection_result}
-    )
-    return result.model_dump()
+    result = chain.invoke({"detection_result": detection_result})
+
+    parsed_result = result.get("parsed")
+    runtime_model = get_runtime_model(result)
+    print(f"tool=pattern_recommendation_tool model={runtime_model}")
+
+    if parsed_result is None:
+        raise ValueError(
+            "Tool pattern_recommendation_tool did not produce parsed output")
+
+    return parsed_result.model_dump()
 
 
 # ========================
@@ -153,7 +184,8 @@ def code_generation_tool(pattern: str, code: str) -> dict:
     - apply the pattern correctly
     """
     llm = get_llm()
-    structured_llm = llm.with_structured_output(RefactoredCodeResult)
+    structured_llm = llm.with_structured_output(
+        RefactoredCodeResult, include_raw=True)
 
     prompt = PromptTemplate(
         input_variables=["pattern", "code"],
@@ -176,14 +208,21 @@ Output rules:
 
 Code:
 {code}
-"""
+""",
     )
 
     chain = prompt | structured_llm
-    result: RefactoredCodeResult = chain.invoke(
-        {"pattern": pattern, "code": code}
-    )
-    return result.model_dump()
+    result = chain.invoke({"pattern": pattern, "code": code})
+
+    parsed_result = result.get("parsed")
+    runtime_model = get_runtime_model(result)
+    print(f"tool=code_generation_tool model={runtime_model}")
+
+    if parsed_result is None:
+        raise ValueError(
+            "Tool code_generation_tool did not produce parsed output")
+
+    return parsed_result.model_dump()
 
 
 # ========================
@@ -201,7 +240,8 @@ def evaluation_tool(original_code: str, refactored_code: str) -> dict:
     - overall quality score
     """
     llm = get_llm()
-    structured_llm = llm.with_structured_output(EvaluationResult)
+    structured_llm = llm.with_structured_output(
+        EvaluationResult, include_raw=True)
 
     prompt = PromptTemplate(
         input_variables=["original_code", "refactored_code"],
@@ -224,14 +264,22 @@ Guidelines:
 
 === Refactored Code ===
 {refactored_code}
-"""
+""",
     )
 
     chain = prompt | structured_llm
-    result: EvaluationResult = chain.invoke(
+    result = chain.invoke(
         {
             "original_code": original_code,
-            "refactored_code": refactored_code
+            "refactored_code": refactored_code,
         }
     )
-    return result.model_dump()
+
+    parsed_result = result.get("parsed")
+    runtime_model = get_runtime_model(result)
+    print(f"tool=evaluation_tool model={runtime_model}")
+
+    if parsed_result is None:
+        raise ValueError("Tool evaluation_tool did not produce parsed output")
+
+    return parsed_result.model_dump()
