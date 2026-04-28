@@ -55,6 +55,20 @@ async def chat_completions(payload: ChatCompletionRequest) -> dict[str, Any]:
     }
 
 
+@app.get("/v1/models")
+async def list_models():
+    return {
+        "object": "list",
+        "data": [
+            {
+                "id": "custom-agent",
+                "object": "model",
+                "owned_by": "you"
+            }
+        ]
+    }
+
+
 def _build_prompt(messages: list[ChatMessage]) -> str:
     if not messages:
         return ""
